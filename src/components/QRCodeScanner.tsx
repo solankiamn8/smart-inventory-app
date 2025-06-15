@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 
 interface QRCodeScannerProps {

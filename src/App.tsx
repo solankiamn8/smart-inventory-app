@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import AppRoutes from './AppRoutes';
 import { AuthProvider } from './contexts/AuthContext';
 import Navbar from './components/Navbar';
 
 function App() {
-  const [dark, setDark] = useState(false);
+  const [dark] = useState(false);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark);
