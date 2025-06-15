@@ -8,15 +8,12 @@ interface InventoryItem {
   name: string;
   quantity: number;
   category?: string;
-  expiryDate?: string;
+  expiryDate?: any; // Firestore Timestamp or string
 }
 
 export default function InventoryPage() {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState('');
-const [selectedCategory, setSelectedCategory] = useState('');
-
 
   useEffect(() => {
     const q = query(collection(db, 'inventory'));
@@ -36,13 +33,18 @@ const [selectedCategory, setSelectedCategory] = useState('');
     }
   };
 
+  const formatExpiryDate = (expiryDate: any) => {
+    if (!expiryDate || !expiryDate.seconds) return '-';
+    return new Date(expiryDate.seconds * 1000).toLocaleDateString();
+  };
+
   const today = new Date();
   const nearExpiryThreshold = 7 * 24 * 60 * 60 * 1000;
 
   const lowStockItems = items.filter((item) => item.quantity < 5);
   const nearExpiryItems = items.filter((item) => {
-    if (!item.expiryDate) return false;
-    const expiry = new Date(item.expiryDate);
+    if (!item.expiryDate || !item.expiryDate.seconds) return false;
+    const expiry = new Date(item.expiryDate.seconds * 1000);
     return expiry.getTime() - today.getTime() <= nearExpiryThreshold;
   });
 
@@ -85,7 +87,7 @@ const [selectedCategory, setSelectedCategory] = useState('');
                 <td className="p-3">{item.name}</td>
                 <td className="p-3">{item.quantity}</td>
                 <td className="p-3">{item.category || '-'}</td>
-                <td className="p-3">{item.expiryDate || '-'}</td>
+                <td className="p-3">{formatExpiryDate(item.expiryDate)}</td>
                 <td className="p-3 space-x-2">
                   <button
                     onClick={() => navigate(`/edit-item/${item.id}`)}
