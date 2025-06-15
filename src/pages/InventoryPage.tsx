@@ -13,9 +13,10 @@ interface InventoryItem {
 
 export default function InventoryPage() {
   const [items, setItems] = useState<InventoryItem[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
   const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState('');
+const [selectedCategory, setSelectedCategory] = useState('');
+
 
   useEffect(() => {
     const q = query(collection(db, 'inventory'));
@@ -45,14 +46,6 @@ export default function InventoryPage() {
     return expiry.getTime() - today.getTime() <= nearExpiryThreshold;
   });
 
-  const categories = Array.from(new Set(items.map((item) => item.category).filter(Boolean)));
-
-  const filteredItems = items.filter((item) => {
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory ? item.category === selectedCategory : true;
-    return matchesSearch && matchesCategory;
-  });
-
   return (
     <div className="p-6">
       <h2 className="text-2xl font-bold mb-4">📋 Inventory</h2>
@@ -71,30 +64,6 @@ export default function InventoryPage() {
         )}
       </div>
 
-      {/* Search and Filter Controls */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-4">
-        <input
-          type="text"
-          placeholder="Search by name..."
-          className="p-2 border rounded w-full md:w-1/2"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-
-        <select
-          className="p-2 border rounded w-full md:w-1/4"
-          value={selectedCategory}
-          onChange={(e) => setSelectedCategory(e.target.value)}
-        >
-          <option value="">All Categories</option>
-          {categories.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat}
-            </option>
-          ))}
-        </select>
-      </div>
-
       {/* Table Section */}
       <div className="overflow-x-auto">
         <table className="min-w-full bg-white dark:bg-gray-800 rounded-lg shadow">
@@ -108,7 +77,7 @@ export default function InventoryPage() {
             </tr>
           </thead>
           <tbody>
-            {filteredItems.map((item) => (
+            {items.map((item) => (
               <tr
                 key={item.id}
                 className="border-t dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -133,10 +102,10 @@ export default function InventoryPage() {
                 </td>
               </tr>
             ))}
-            {filteredItems.length === 0 && (
+            {items.length === 0 && (
               <tr>
                 <td colSpan={5} className="p-3 text-center text-gray-500">
-                  No matching items.
+                  No items found.
                 </td>
               </tr>
             )}
