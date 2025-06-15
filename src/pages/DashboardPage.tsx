@@ -1,37 +1,89 @@
 import { useEffect, useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement } from 'chart.js';
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Tooltip,
+  Legend,
+} from 'chart.js';
 import { Bar } from 'react-chartjs-2';
-import { query, collection, onSnapshot } from 'firebase/firestore';
+import { collection, onSnapshot, query } from 'firebase/firestore';
 import { db } from '../firebase';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement);
+ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
-  const nav = useNavigate();
-  useEffect(() => { if (!user) nav('/login'); }, [user]);
+  const navigate = useNavigate();
   const [data, setData] = useState<number[]>([]);
+  const [labels, setLabels] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!user) navigate('/login');
+  }, [user]);
 
   useEffect(() => {
     const q = query(collection(db, 'inventory'));
-    return onSnapshot(q, snap => {
-      const counts = snap.docs.map(d => d.data().quantity as number);
-      setData(counts);
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const newData: number[] = [];
+      const newLabels: string[] = [];
+      snapshot.forEach((doc) => {
+        const item = doc.data();
+        newLabels.push(item.name || 'Item');
+        newData.push(item.quantity || 0);
+      });
+      setLabels(newLabels);
+      setData(newData);
     });
+    return () => unsubscribe();
   }, []);
 
-  return user ? (
-    <div className="p-4">
+  if (!user) return null;
+
+  return (
+    <div className="p-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl">Dashboard</h2>
-        <button onClick={logout} className="text-red-500">Logout</button>
+        <h2 className="text-2xl font-bold">📊 Dashboard</h2>
+        <button
+          onClick={logout}
+          className="px-4 py-1 text-sm text-white bg-red-600 rounded hover:bg-red-700"
+        >
+          Logout
+        </button>
       </div>
-      <section className="mt-6">
-        <h3 className="mb-2">Stock Levels</h3>
-        <Bar data={{ labels: data.map((_, i) => `#${i+1}`), datasets: [{ label: 'Qty', data, backgroundColor: 'skyblue' }] }} />
-      </section>
+
+      <div className="mt-8">
+        <h3 className="text-lg mb-2">Stock Levels</h3>
+        <div className="bg-white dark:bg-gray-800 p-4 rounded shadow">
+          <Bar
+            data={{
+              labels,
+              datasets: [
+                {
+                  label: 'Quantity',
+                  data,
+                  backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                },
+              ],
+            }}
+            options={{
+              responsive: true,
+              plugins: {
+                legend: { display: true },
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  ticks: { stepSize: 1 },
+                },
+              },
+            }}
+          />
+        </div>
+      </div>
     </div>
-  ) : null;
+  );
 }
